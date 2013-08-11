@@ -36,14 +36,14 @@ import model.Axis;
 import model.RotationModel;
 import model.TransformData;
 import mygame.DataManager;
+import mygame.Main;
 
 /**
  *
  * @author nikolamarkovic
  */
 public class FixedCameraScene extends Scene{
-    private final String IM_MOUSE_LEFT_CLICK = "IM_MOUSE_LEFT_CLICK";
-    private final String IM_MOUSE_MOVE = "IM_MOUSE_MOVE";
+    
     private final String NODE_AXES = "NODE_AXES";
     private Node axesNode;
    
@@ -77,8 +77,6 @@ public class FixedCameraScene extends Scene{
     public Canvas getCanvas(){
         return context.getCanvas();
     }
-    
-    
     
     private final int AXIS_INNER_X = 1;
     private final int AXIS_INNER_Y = 2;
@@ -220,7 +218,7 @@ public class FixedCameraScene extends Scene{
     }
     private Vector2f startMouseDragPosition = null;
     private Vector2f lastMouseDragPosition = null;
-    private boolean dragging = false;
+    
 
     private CollisionResult handleCollision() {
 
@@ -274,7 +272,7 @@ public class FixedCameraScene extends Scene{
     private int distanceFactor = 20;
     private double rotateFactor = 5.0;
 
-    private void onMouseDrag() {
+    public void onMouseDrag() {
         Vector2f pos = app.getInputManager().getCursorPosition();
 
         double dX = initialDragPosition.x - pos.x;
@@ -299,7 +297,7 @@ public class FixedCameraScene extends Scene{
     }
     Material glowing;
 
-    private void onMouseMove() {
+    public void onMouseMove() {
         if (glowing != null) {
             glowing.setColor("GlowColor", ColorRGBA.BlackNoAlpha);
             glowing = null;
@@ -321,38 +319,10 @@ public class FixedCameraScene extends Scene{
         mat.setColor("GlowColor", ColorRGBA.Green);
         glowing = mat;
     }
-    private Vector2f initialDragPosition;
-    private Quaternion initialDragRotation;
-
-    private float xRotation = 0;
-    private float yRotation = 0;
-    private float zRotation = 0;
     
-    protected void initInput() {
-        app.getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_X, true));
-        app.getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_X, false));
-        app.getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_Y, true));
-        app.getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_Y, false));
-
-        app.getInputManager().addListener(new AnalogListener() {
-            public void onAnalog(String name, float value, float tpf) {
-
-                if (dragging) {
-                    onMouseDrag();
-                } else {
-                    onMouseMove();
-                }
-
-
-            }
-        }, IM_MOUSE_MOVE);
-
-        app.getInputManager().addMapping(IM_MOUSE_LEFT_CLICK, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
-
-        app.getInputManager().addListener(new ActionListener() {
-            public void onAction(String name, boolean isPressed, float tpf) {
-                if (name.equals(IM_MOUSE_LEFT_CLICK) && isPressed) {
-                    CollisionResult result = FixedCameraScene.this.handleCollision();
+    public void onMouseClick(String name, boolean isPressed, float tpf) { 
+        if (name.equals(IM_MOUSE_LEFT_CLICK) && isPressed) {
+               CollisionResult result = FixedCameraScene.this.handleCollision();
                     if (result == null) {
                         dragging = false;
                         initialDragPosition = null;
@@ -378,8 +348,18 @@ public class FixedCameraScene extends Scene{
                     dragging = false;
                     rotateAxis = FixedCameraScene.RotateAxis.UNDEFINED;
                 }
-            }
-        }, IM_MOUSE_LEFT_CLICK);
+    }
+    
+    private Vector2f initialDragPosition;
+    private Quaternion initialDragRotation;
+
+    private float xRotation = 0;
+    private float yRotation = 0;
+    private float zRotation = 0;
+    
+    protected void initInput() {
+        
+        
     }
     
     
@@ -511,5 +491,9 @@ public class FixedCameraScene extends Scene{
         for (Axis lAxis : getAxes()) {
             axesNode.attachChild(lAxis.getGeometry());
         }
+    }
+    
+    public void left(){
+        System.out.println("Left");
     }
 }

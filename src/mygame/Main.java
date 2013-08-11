@@ -8,9 +8,17 @@ import GUI.PresetsPanel;
 import GUI.TopCameraControlsPanel;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.plugins.ZipLocator;
+import com.jme3.collision.CollisionResult;
+import com.jme3.input.MouseInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.AnalogListener;
+import com.jme3.input.controls.MouseAxisTrigger;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Spatial;
@@ -36,7 +44,8 @@ import scene.Scene;
 import util.Settings;
 
 public class Main extends SimpleApplication implements CameraDelegate{
-
+    private final String IM_MOUSE_LEFT_CLICK = "IM_MOUSE_LEFT_CLICK";
+    private final String IM_MOUSE_MOVE = "IM_MOUSE_MOVE";
     
     private FirstPersonCameraScene fpCameraScene;
     private FixedCameraScene fixedCameraScene;
@@ -236,13 +245,46 @@ public class Main extends SimpleApplication implements CameraDelegate{
         
         setupModel();
         setupLight();
-
+        setupInput();
         
+    }
+    
+    private void setupInput(){
+        // Mouse move
+        getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_X, true));
+        getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_X, false));
+        getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_Y, true));
+        getInputManager().addMapping(IM_MOUSE_MOVE, new MouseAxisTrigger(MouseInput.AXIS_Y, false));
+
+        getInputManager().addListener(new AnalogListener() {
+            public void onAnalog(String name, float value, float tpf) {
+
+                if (scene.isDragging()) {
+                    scene.onMouseDrag();
+                } else {
+                    scene.onMouseMove();
+                }
+
+
+            }
+        }, IM_MOUSE_MOVE);
+        
+        
+        // Mouse click
+        getInputManager().addMapping(IM_MOUSE_LEFT_CLICK, new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
+        
+        getInputManager().addListener(new ActionListener() {
+            public void onAction(String name, boolean isPressed, float tpf) {
+                scene.onMouseClick(name, isPressed, tpf);
+            }
+        }, IM_MOUSE_LEFT_CLICK);
     }
 
     @Override
     public void simpleUpdate(float tpf) {
         //TODO: add update code
+        if(scene!=null)
+            scene.update();
     }
 
     @Override
