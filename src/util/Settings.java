@@ -16,4 +16,7 @@ public class Settings {
     public static boolean sceneRotationEnabled= true;
     public static boolean sceneChanged= false;
     public static File currentFile= null;
+    
+    public static int WIDTH= 600;
+    public static int HEIGHT= 400;
 }

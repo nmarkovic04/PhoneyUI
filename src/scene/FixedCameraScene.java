@@ -70,7 +70,7 @@ public class FixedCameraScene extends Scene{
         Dimension dim = new Dimension(1024, 768);
         
         rotateAxis = RotateAxis.UNDEFINED;
-        
+        active= true;
         context.getCanvas().setPreferredSize(dim);
     }
     
@@ -403,9 +403,9 @@ public class FixedCameraScene extends Scene{
 
     
     public void onTransformDataChanged(Object source, final TransformData data) {
-//        if(!active){
-//            return;
-//        }
+        if(!active){
+            return;
+        }
         app.enqueue(new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 

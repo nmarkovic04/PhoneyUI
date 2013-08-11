@@ -41,6 +41,10 @@ public class RotationModel {
         return transformData;
     }
    
+    public void setQuaternion(Object source, Quaternion q){
+        getTransformData().setQuaterion(q);
+        notifyTransformDataChanged(source);
+    }
     public void setTransformData(Object source, float x, float y, float z){
         this.transformData.setRotationX(x);
         this.transformData.setRotationY(y);

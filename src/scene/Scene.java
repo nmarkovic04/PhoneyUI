@@ -32,7 +32,7 @@ public abstract class Scene implements TransformDataChangeObserver{
         initNodes();
         initGeometry();
         initInput();
-        initGUI();
+        
         
         RotationModel.getInstance().addObserver(this);
     }

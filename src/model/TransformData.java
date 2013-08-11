@@ -49,7 +49,7 @@ public class TransformData {
      */
     public void setRotationX(double rotationX) {
         this.rotationX = rotationX;
-        calculateQuaternion();
+        
     }
 
     /**

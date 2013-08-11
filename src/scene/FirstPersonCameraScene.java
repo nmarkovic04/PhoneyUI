@@ -20,10 +20,14 @@ import de.lessvoid.nifty.screen.Screen;
 import de.lessvoid.nifty.screen.ScreenController;
 import java.awt.Canvas;
 import java.awt.Dimension;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import model.RotationModel;
 import model.TransformData;
 import model.TransformDataChangeObserver;
 import mygame.DataManager;
+import util.Settings;
 
 /**
  *
@@ -48,9 +52,21 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
         return context.getCanvas();
     }
 
-    public void onTransformDataChanged(Object source, TransformData data) {
-        if(active)
-            camera.setRotation(data.getQuaternion());
+    public void onTransformDataChanged(Object source, final TransformData data) {
+        System.out.println("Angles "+data.getRotationX()+", "+data.getRotationY()+", "+data.getRotationZ());
+        System.out.println("Quaternion "+data.getQuaternion().getX()+" "+data.getQuaternion().getY()+" "
+                            +data.getQuaternion().getZ()+" "+data.getQuaternion().getW());
+        if(!active)
+            return;
+        app.enqueue(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                System.out.println("RotateEnqueue ");
+                camera.setRotation(data.getQuaternion());
+                RotationModel.getInstance().getTransformData().setQuaterion(camera.getRotation());
+                return true;
+            }
+        });
+           
     }
 
     @Override
@@ -88,52 +104,81 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
     private Picture pictureRight;
     private Picture pictureRightPressed;
     
+    private Picture pictureUp;
+    private Picture pictureUpPressed;
+    private Picture pictureDown;
+    private Picture pictureDownPressed;
+    
+    private Picture pictureSideLeft;
+    private Picture pictureSideLeftPressed;
+    private Picture pictureSideRight;
+    private Picture pictureSideRightPressed;
+    
+    
     @Override
     protected void initGUI() {
-//        niftyDisplay = new NiftyJmeDisplay(
-//            app.getAssetManager(), app.getInputManager(), app.getAudioRenderer(), app.getGuiViewPort());
-//        /** Create a new NiftyGUI object */
-//        
-//        Nifty nifty = niftyDisplay.getNifty();
-//        /** Read your XML and initialize your custom ScreenController */
-//        nifty.fromXml("Interface/gui.xml", "start");
-//        
-//        // attach the Nifty display to the gui view port as a processor
-//        app.getGuiViewPort().addProcessor(niftyDisplay);
         
         float picWidth= 100;
         float picHeight= 100;
+        float sidePicWidth= 50;
+        float sidePicHeight= 100;
+        int padding= 20;
+        
+        int x= 0, y=0;
+        
+        x= padding; 
+        y= (int)(Settings.HEIGHT/2-picHeight/2);
+        addPicture("left", "Textures/dm_left_arrow.png", picWidth, picHeight, x, y, true);
+        addPicture("leftPressed", "Textures/dm_left_arrow_on.png", picWidth, picHeight, x, y, false);
+        
+        x= (int)(Settings.WIDTH-padding-picWidth);
+        addPicture("right", "Textures/dm_right_arrow.png", picWidth, picHeight, x, y, true);
+        addPicture("rightPressed", "Textures/dm_right_arrow_on.png", picWidth, picHeight, x, y, false);
+
+        x= (int)(Settings.WIDTH/2-picWidth/2);
+        y= (int)(Settings.HEIGHT-padding - picHeight);
+        addPicture("up", "Textures/dm_up_arrow.png", picWidth, picHeight, x, y, true);
+        addPicture("upPressed", "Textures/dm_up_arrow_on.png", picWidth, picHeight, x, y, false);
+        
+        y= (int)padding;
+        addPicture("down", "Textures/dm_down_arrow.png", picWidth, picHeight, x, y, true);
+        addPicture("downPressed", "Textures/dm_down_arrow_on.png", picWidth, picHeight, x, y, false);
+        
+        x= (int)(Settings.WIDTH/2-5*padding);
+        y= (int)(Settings.HEIGHT/2-picHeight/2);
+        addPicture("sideLeft", "Textures/dm_side_left_arrow.png", sidePicWidth, sidePicHeight, x, y, true);
+        addPicture("sideLeftPressed", "Textures/dm_side_left_arrow_on.png", sidePicWidth, sidePicHeight, x, y, false);
+        
+        x= (int)(Settings.WIDTH/2+(Settings.WIDTH/2-(x+sidePicWidth)));
+        
+        addPicture("sideRight", "Textures/dm_side_right_arrow.png", sidePicWidth, sidePicHeight, x, y, true);
+        addPicture("sideRightPressed", "Textures/dm_side_right_arrow_on.png", sidePicWidth, sidePicHeight, x, y, false);
         
         
-        pictureLeft= new Picture("left");
-        pictureLeft.setImage(app.getAssetManager(), "Textures/dm_left_arrow.png", true);
-        pictureLeft.setWidth(picWidth);
-        pictureLeft.setHeight(picHeight);
-        pictureLeft.setPosition(50, 200);
-        app.getGuiNode().attachChild(pictureLeft);
-        
-        pictureLeftPressed= new Picture("leftPressed");
-        pictureLeftPressed.setImage(app.getAssetManager(), "Textures/dm_left_arrow_on.png", true);
-        pictureLeftPressed.setWidth(picWidth);
-        pictureLeftPressed.setHeight(picHeight);
-        pictureLeftPressed.setPosition(50, 200);
-//        app.getGuiNode().attachChild(pictureLeftPressed);
-        
-        pictureRight= new Picture("right");
-        pictureRight.setImage(app.getAssetManager(), "Textures/dm_right_arrow.png", true);
-        pictureRight.setWidth(picWidth);
-        pictureRight.setHeight(picHeight);
-        pictureRight.setPosition(400, 200);
-        app.getGuiNode().attachChild(pictureRight);
-        
-        pictureRightPressed= new Picture("rightPressed");
-        pictureRightPressed.setImage(app.getAssetManager(), "Textures/dm_right_arrow_on.png", true);
-        pictureRightPressed.setWidth(picWidth);
-        pictureRightPressed.setHeight(picHeight);
-        pictureRightPressed.setPosition(400, 200);
-//        app.getGuiNode().attachChild(pictureRightPressed);
     }
 
+    private Map<String, Picture> pictures;
+    
+    private void addPicture(String name, String imageName, float w, float h, int x, int y, boolean addToScene){
+        if(pictures==null){
+            pictures= new HashMap<String, Picture>();
+        }
+        Picture pic;
+        if((pic=pictures.get(name))==null){
+            pic= new Picture(name);
+            pic.setImage(app.getAssetManager(), imageName, true);
+            pic.setWidth(w);
+            pic.setHeight(h);
+            pic.setPosition(x,y);
+            pictures.put(name, pic);
+        }
+        if(addToScene){
+            app.getGuiNode().attachChild(pic);
+        }
+        
+        
+    }
+    
     public void willDisappear(){
         active= false;
         hideGUI();
@@ -148,7 +193,7 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
     }
     
     private void hideGUI(){
-       app.getGuiViewPort().removeProcessor(niftyDisplay);
+       app.getGuiNode().detachAllChildren();
     }
 
     public void bind(Nifty nifty, Screen screen) {
@@ -193,29 +238,37 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
      public void onMouseClick(String name, boolean isPressed, float tpf) { 
         if (name.equals(IM_MOUSE_LEFT_CLICK) && isPressed) {
             Vector2f click2d = new Vector2f(app.getInputManager().getCursorPosition());
-            if(isClickedOnImage(pictureLeft, click2d) || isClickedOnImage(pictureLeftPressed, click2d)){
-//                rotate(0, rotateFactor, 0);
+            if(isClickedOnImage(picture("left"), click2d) || isClickedOnImage(picture("leftPressed"), click2d)){
                 xRotation= 0;
                 yRotation= rotateFactor;
                 zRotation= 0;
                 
-                
-            }else if(isClickedOnImage(pictureRight, click2d) || isClickedOnImage(pictureRightPressed, click2d)){
+            }else if(isClickedOnImage(picture("right"), click2d) || isClickedOnImage(picture("rightPressed"), click2d)){
                 xRotation= 0;
                 yRotation= -rotateFactor;
                 zRotation= 0;
+            }else if(isClickedOnImage(picture("down"), click2d) || isClickedOnImage(picture("downPressed"), click2d)){
+                xRotation= rotateFactor;
+                yRotation= 0;
+                zRotation= 0;
+            }else if(isClickedOnImage(picture("up"), click2d) || isClickedOnImage(picture("upPressed"), click2d)){
+                xRotation= -rotateFactor;
+                yRotation= 0;
+                zRotation= 0;
+            }else if(isClickedOnImage(picture("sideLeft"), click2d) || isClickedOnImage(picture("sideLeftPressed"), click2d)){
+                xRotation= 0;
+                yRotation= 0;
+                zRotation= -rotateFactor;
+            }else if(isClickedOnImage(picture("sideRight"), click2d) || isClickedOnImage(picture("sideRightPressed"), click2d)){
+                xRotation= 0;
+                yRotation= 0;
+                zRotation= rotateFactor;
+            }else{
+                xRotation= 0;
+                yRotation= 0;
+                zRotation= 0;
             }
-//        Vector3f click3d = app.getCamera().getWorldCoordinates(
-//                new Vector2f(click2d.x, click2d.y), 0f).clone();
-//        Vector3f dir = app.getCamera().getWorldCoordinates(
-//                new Vector2f(click2d.x, click2d.y), 1f).subtractLocal(click3d).normalizeLocal();
-//        Ray ray = new Ray(click3d, dir);
-//
-//        app.getGuiNode().collideWith(ray, results);
-//       
-//        if (results.size() > 0) {
-//            CollisionResult closest = results.getClosestCollision();
-//            return closest;
+            
             rotating= true;
         }else{
             rotating= false;
@@ -228,7 +281,7 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
             rotate(xRotation, yRotation, zRotation);
         }
     }
-    private float rotateFactor= 0.3f;
+    private float rotateFactor= 0.55f;
      
     private void rotate(float x, float y, float z){
         x= (float)Math.toRadians(x);
@@ -250,9 +303,8 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
 
         camera.setRotation(camera.getRotation().mult(newQuat));
 
-        
-
-        RotationModel.getInstance().getTransformData().setQuaterion(camera.getRotation());
+       
+        RotationModel.getInstance().setQuaternion(this, camera.getRotation());
         
 //        float[] angles = phoneGeometry.getLocalRotation().toAngles(null);
 //        if (angles != null && angles.length == 3) {
@@ -278,16 +330,44 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
      
      public void onMouseMove(){
          Vector2f click2d = new Vector2f(app.getInputManager().getCursorPosition());
-         if(isClickedOnImage(pictureLeft, click2d) || isClickedOnImage(pictureLeftPressed, click2d)){
-             app.getGuiNode().attachChild(pictureLeftPressed);
+         if(isClickedOnImage(picture("left"), click2d) || isClickedOnImage(picture("leftPressed"), click2d)){
+             app.getGuiNode().attachChild(picture("leftPressed"));
          }else{
-             app.getGuiNode().detachChild(pictureLeftPressed);
+             app.getGuiNode().detachChild(picture("leftPressed"));
          }
          
-         if(isClickedOnImage(pictureRight, click2d) || isClickedOnImage(pictureRightPressed, click2d)){
-             app.getGuiNode().attachChild(pictureRightPressed);
+         if(isClickedOnImage(picture("right"), click2d) || isClickedOnImage(picture("rightPressed"), click2d)){
+             app.getGuiNode().attachChild(picture("rightPressed"));
          }else{
-             app.getGuiNode().detachChild(pictureRightPressed);
+             app.getGuiNode().detachChild(picture("rightPressed"));
          }
+         
+         if(isClickedOnImage(picture("up"), click2d) || isClickedOnImage(picture("upPressed"), click2d)){
+             app.getGuiNode().attachChild(picture("upPressed"));
+         }else{
+             app.getGuiNode().detachChild(picture("upPressed"));
+         }
+         
+         if(isClickedOnImage(picture("down"), click2d) || isClickedOnImage(picture("downPressed"), click2d)){
+             app.getGuiNode().attachChild(picture("downPressed"));
+         }else{
+             app.getGuiNode().detachChild(picture("downPressed"));
+         }
+         
+         if(isClickedOnImage(picture("sideLeft"), click2d) || isClickedOnImage(picture("sideLeftPressed"), click2d)){
+             app.getGuiNode().attachChild(picture("sideLeftPressed"));
+         }else{
+             app.getGuiNode().detachChild(picture("sideLeftPressed"));
+         }
+         
+         if(isClickedOnImage(picture("sideRight"), click2d) || isClickedOnImage(picture("sideRightPressed"), click2d)){
+             app.getGuiNode().attachChild(picture("sideRightPressed"));
+         }else{
+             app.getGuiNode().detachChild(picture("sideRightPressed"));
+         }
+     }
+     
+     public Picture picture(String name){
+         return pictures.get(name);
      }
 }

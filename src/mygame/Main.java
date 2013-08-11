@@ -70,7 +70,7 @@ public class Main extends SimpleApplication implements CameraDelegate{
     private void init() {
         AppSettings settings = new AppSettings(true);
         settings.setTitle("DummyMotion");
-        settings.setResolution(600, 400);
+        settings.setResolution(Settings.WIDTH, Settings.HEIGHT);
 
         setSettings(settings);
         createCanvas();
@@ -106,7 +106,7 @@ public class Main extends SimpleApplication implements CameraDelegate{
 
         frame.pack();
         frame.setVisible(true);
-
+        
         startCanvas();
     }
     
@@ -240,6 +240,8 @@ public class Main extends SimpleApplication implements CameraDelegate{
 
     @Override
     public void simpleInitApp() {
+        Settings.WIDTH= fixedCameraScene.getCanvas().getWidth();
+        Settings.HEIGHT= fixedCameraScene.getCanvas().getHeight();
         fpCameraScene.init();
         fixedCameraScene.init();
         
