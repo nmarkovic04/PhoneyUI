@@ -7,11 +7,6 @@ package scene;
 import com.jme3.app.SimpleApplication;
 import com.jme3.collision.CollisionResult;
 import com.jme3.collision.CollisionResults;
-import com.jme3.input.MouseInput;
-import com.jme3.input.controls.ActionListener;
-import com.jme3.input.controls.AnalogListener;
-import com.jme3.input.controls.MouseAxisTrigger;
-import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
@@ -24,6 +19,7 @@ import com.jme3.post.filters.BloomFilter;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
+import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Torus;
 import com.jme3.system.JmeCanvasContext;
@@ -36,7 +32,6 @@ import model.Axis;
 import model.RotationModel;
 import model.TransformData;
 import mygame.DataManager;
-import mygame.Main;
 
 /**
  *
@@ -47,7 +42,7 @@ public class FixedCameraScene extends Scene{
     private final String NODE_AXES = "NODE_AXES";
     private Node axesNode;
    
-    private Geometry phoneGeometry;
+//    private Geometry phoneGeometry;
     // outter ring geom
     private Geometry xAxisGeom;
     private Geometry yAxisGeom;
@@ -61,8 +56,6 @@ public class FixedCameraScene extends Scene{
     
     private JmeCanvasContext context;
     private SimpleApplication app;
-    
-    
     
     public FixedCameraScene(SimpleApplication app, JmeCanvasContext pContext){
         this.context= pContext;
@@ -88,11 +81,11 @@ public class FixedCameraScene extends Scene{
     private void createAxes() {
         int circleSamples = 300;
         int radialSamples = 20;
-        float innerRadius = 0.01f;
-        float outterRadius = 1.5f;
+        float innerRadius = 0.02f;
+        float outterRadius = 2.5f;
 
-        float innerRadiusTr = 0.08f;
-        float outterRadiusTr = 1.54f;
+        float innerRadiusTr = 0.1f;
+        float outterRadiusTr = 2.5f;
 
         // inner X
         Torus t1 = new Torus(circleSamples, radialSamples, innerRadius, outterRadius);
@@ -290,10 +283,10 @@ public class FixedCameraScene extends Scene{
         RotationModel.getInstance().setTransformData(this, FixedCameraScene.this.xRotation, 
                 FixedCameraScene.this.yRotation, 
                 FixedCameraScene.this.zRotation);
-        RotationModel.getInstance().getTransformData().setQuaterion(phoneGeometry.getLocalRotation());
+        RotationModel.getInstance().getTransformData().setQuaterion(phoneSpatial.getLocalRotation());
         lastMouseDragPosition = new Vector2f(pos);
 
-        DataManager.getInstance().send(phoneGeometry.getWorldMatrix());
+        DataManager.getInstance().send(phoneSpatial.getLocalToWorldMatrix(null));
     }
     Material glowing;
 
@@ -331,7 +324,7 @@ public class FixedCameraScene extends Scene{
                     } else {
                         dragging = true;
                         initialDragPosition = new Vector2f(app.getInputManager().getCursorPosition());
-                        initialDragRotation = new Quaternion(phoneGeometry.getLocalRotation());
+                        initialDragRotation = new Quaternion(phoneSpatial.getLocalRotation());
                         
                     }
 
@@ -388,11 +381,11 @@ public class FixedCameraScene extends Scene{
         Quaternion baseRotation = (initialDragRotation != null && !isBaseRotation) ? initialDragRotation
                 : new Quaternion().fromAngleAxis(0, Vector3f.UNIT_X);
 
-        phoneGeometry.setLocalRotation(newQuat.mult(baseRotation));
+        phoneSpatial.setLocalRotation(newQuat.mult(baseRotation));
 
-        RotationModel.getInstance().getTransformData().setQuaterion(phoneGeometry.getLocalRotation());
+        RotationModel.getInstance().getTransformData().setQuaterion(phoneSpatial.getLocalRotation());
         
-        float[] angles = phoneGeometry.getLocalRotation().toAngles(null);
+        float[] angles = phoneSpatial.getLocalRotation().toAngles(null);
         if (angles != null && angles.length == 3) {
             xRotation = angles[0];
             yRotation = angles[1];
@@ -403,9 +396,9 @@ public class FixedCameraScene extends Scene{
 
     
     public void onTransformDataChanged(Object source, final TransformData data) {
-        if(!active){
-            return;
-        }
+//        if(!active){
+//            return;
+//        }
         app.enqueue(new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 
@@ -427,8 +420,8 @@ public class FixedCameraScene extends Scene{
       
         app.getViewPort().setClearFlags(true, true, true);
         
-        float camDistance = 4.0f;     
-        app.getCamera().setLocation(new Vector3f(xGeom+camDistance, yGeom+camDistance, zGeom+camDistance));
+        float camDistance = 4.5f;     
+        app.getCamera().setLocation(new Vector3f(xGeom+camDistance, yGeom+camDistance, zGeom-camDistance));
         app.getCamera().lookAt(new Vector3f(xGeom, yGeom, zGeom), Vector3f.UNIT_Y);
         
         if(!filtersInitialized){
@@ -446,20 +439,29 @@ public class FixedCameraScene extends Scene{
         createPhoneGeometry();
         createAxes();
         
-   
-        
     }
 
+    private Spatial phoneSpatial;
+    
     private void createPhoneGeometry(){
         Box b = new Box(0.2f, 1.0f, 0.5f);
-        phoneGeometry = new Geometry("Box", b);
-        phoneGeometry.setLocalTranslation(xGeom, yGeom, zGeom);
-        Material mat = new Material(app.getAssetManager(), "Materials/GeomMaterial.j3md");
-        mat.setColor("Color", ColorRGBA.White);
-
-        phoneGeometry.setMaterial(mat);
+        phoneSpatial = app.getAssetManager().loadModel("Models/iphone_4s_home_screen.j3o");
+         
+//        Material mat_default = new Material( 
+//            app.getAssetManager(), "Models/phone_4_home_screen.mtl");
+//        teapot.setMaterial(mat_default);
+        phoneSpatial.setLocalTranslation(xGeom, yGeom, zGeom);
+        phoneSpatial.setLocalRotation(new Quaternion(new float[]{0, (float)Math.toRadians(180), 0}));
+        app.getRootNode().attachChild(phoneSpatial);
         
-        app.getRootNode().attachChild(phoneGeometry);
+//        phoneGeometry = new Geometry("Box", b);
+//        phoneGeometry.setLocalTranslation(xGeom, yGeom, zGeom);
+//        Material mat = new Material(app.getAssetManager(), "Materials/GeomMaterial.j3md");
+//        mat.setColor("Color", ColorRGBA.White);
+//
+//        phoneGeometry.setMaterial(mat);
+        
+//        app.getRootNode().attachChild(phoneGeometry);
     }
 
     @Override
@@ -483,6 +485,12 @@ public class FixedCameraScene extends Scene{
     public void willDisappear(){
         active= false;
         axesNode.detachAllChildren();
+        app.getRootNode().detachChild(phoneSpatial);
+    }
+    
+    @Override
+    public void willAppear(){
+        app.getRootNode().attachChild(phoneSpatial);
     }
     
     @Override

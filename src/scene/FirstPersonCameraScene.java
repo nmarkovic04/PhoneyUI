@@ -279,6 +279,7 @@ public class FirstPersonCameraScene extends Scene implements ScreenController{
     public void update(){
         if(rotating){
             rotate(xRotation, yRotation, zRotation);
+            DataManager.getInstance().send(camera.getProjectionMatrix());
         }
     }
     private float rotateFactor= 0.55f;

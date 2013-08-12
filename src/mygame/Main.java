@@ -71,7 +71,8 @@ public class Main extends SimpleApplication implements CameraDelegate{
         AppSettings settings = new AppSettings(true);
         settings.setTitle("DummyMotion");
         settings.setResolution(Settings.WIDTH, Settings.HEIGHT);
-
+        settings.setSamples(1);
+        
         setSettings(settings);
         createCanvas();
         setDisplayStatView(false);
@@ -106,6 +107,7 @@ public class Main extends SimpleApplication implements CameraDelegate{
 
         frame.pack();
         frame.setVisible(true);
+        
         
         startCanvas();
     }

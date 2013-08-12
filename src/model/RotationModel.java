@@ -46,9 +46,11 @@ public class RotationModel {
         notifyTransformDataChanged(source);
     }
     public void setTransformData(Object source, float x, float y, float z){
+        System.out.println("Rotation changed to "+x+" "+y+" "+z);
         this.transformData.setRotationX(x);
         this.transformData.setRotationY(y);
         this.transformData.setRotationZ(z);
+        this.transformData.calculateQuaternion();
         notifyTransformDataChanged(source);
     }
     /**
@@ -67,9 +69,11 @@ public class RotationModel {
     
     public void notifyTransformDataChanged(Object source){
         for(TransformDataChangeObserver obs : observers){
-            if(obs!=source)
+            if(obs!=source){
                 obs.onTransformDataChanged(source, transformData);
+            }
         }
+        
     }
     
 }

@@ -19,6 +19,11 @@ public class PresetsTableModel extends DefaultTableModel{
 
     private PresetModel model= PresetModel.getInstance();
     
+    public PresetsTableModel(){
+        super(new String[] { "#", "X Axis Rotation", "Y Axis Rotation", "Z Axis Rotation", "Animation Duration", "Animate Function"}, 
+                PresetModel.getInstance().getPresetCount());
+    }
+    
     @Override
     public int getRowCount() {
         return PresetModel.getInstance().getPresetCount();

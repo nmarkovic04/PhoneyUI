@@ -4,6 +4,9 @@
  */
 package GUI;
 
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
@@ -36,6 +39,15 @@ public class PresetsPanel extends javax.swing.JPanel implements ModelChangeObser
     public PresetsPanel() {
         
         initComponents();
+        jTable1.getColumnModel().getColumn(0).setMaxWidth(20);
+        jTable1.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if(e.getKeyCode()==KeyEvent.VK_DELETE && jTable1.getSelectedRowCount()>0){
+                    PresetModel.getInstance().removePresetAtIndex(jTable1.getSelectedRow());
+                }
+            }
+        });
+        
         PresetModel.getInstance().addObserver(this);
         TableColumn durationColumn = jTable1.getColumnModel().getColumn(5);
 
@@ -98,6 +110,8 @@ public class PresetsPanel extends javax.swing.JPanel implements ModelChangeObser
         jPanel2.add(loopCheckBox);
 
         add(jPanel2);
+
+        jPanel3.setMaximumSize(new java.awt.Dimension(650, 32767));
 
         jTable1.setModel(new PresetsTableModel());
         jScrollPane1.setViewportView(jTable1);
