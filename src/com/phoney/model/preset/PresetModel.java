@@ -45,12 +45,12 @@ public class PresetModel {
     
     public void removePreset(Preset preset){
         presets.remove(preset);
-        notifyOnModelChange();;
+        notifyOnModelChange();
     }
     
     public void removePresetAtIndex(int index){
         presets.remove(index);
-        notifyOnModelChange();;
+        notifyOnModelChange();
     }
     
     public static PresetModel getInstance(){
@@ -71,13 +71,14 @@ public class PresetModel {
         }
     }
     
-    public void saveToFile(File file){
+    public boolean saveToFile(File file){
         ObjectMapper mapper= new ObjectMapper();
         try {
             mapper.writeValue(file, presets);
-            
+            return true;
         } catch (IOException ex) {
             Logger.getLogger(PresetModel.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
         } 
     }
     
@@ -95,5 +96,10 @@ public class PresetModel {
             Logger.getLogger(PresetModel.class.getName()).log(Level.SEVERE, null, ex);
         } 
         return false;
+    }
+    
+    public void removeAllData(){
+        presets.clear();
+        notifyOnModelChange();
     }
 }

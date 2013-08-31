@@ -2,12 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.phoney.model;
+package com.phoney.animation;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.phoney.animation.AnimateFunction.AnimateFunctionType;
 import java.util.LinkedList;
 import java.util.List;
-import static com.phoney.model.AnimateFunction.AnimateFunctionType;
 /**
  *
  * @author nikolamarkovic
@@ -52,6 +51,7 @@ public class AnimationManager {
                 return currentTime*currentTime*currentTime;
             }
         });
+        
         functions.add(cubicEaseInFunction);
         
         // cubic ease in out
@@ -77,7 +77,6 @@ public class AnimationManager {
             if(type==function.getType()){
                 return function.getAnimator();
             }
-           
         }
          return null;
     }
@@ -92,7 +91,6 @@ public class AnimationManager {
     }
     
     public AnimateFunction getAnimateFunction(AnimateFunctionType type){
-        System.out.println("Get Animator for "+type.getName());
         for(AnimateFunction function : functions){
             if(function.getType()==type) {
                 return function;

@@ -218,9 +218,10 @@ public class ControlsPanel extends javax.swing.JPanel implements TransformDataCh
 
    
     private void setAngleValues(double x, double y, double z) {
-        xRotationField.setText(String.valueOf(x));
-        yRotationField.setText(String.valueOf(y));
-        zRotationField.setText(String.valueOf(z));
+        
+        xRotationField.setText(String.format("%.2f",x));
+        yRotationField.setText(String.format("%.2f",y));
+        zRotationField.setText(String.format("%.2f",z));
     }
 
     private double angle(double pAngle) {

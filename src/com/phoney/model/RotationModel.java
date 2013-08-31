@@ -4,7 +4,9 @@
  */
 package com.phoney.model;
 
+import com.jme3.math.Matrix4f;
 import com.jme3.math.Quaternion;
+import com.phoney.data.DataManager;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,12 +17,6 @@ import java.util.List;
 public class RotationModel {
     private static RotationModel instance= new RotationModel();
     private List<TransformDataChangeObserver> observers;
-    /**
-     * @param aInstance the instance to set
-     */
-    public static void setInstance(RotationModel aInstance) {
-        instance = aInstance;
-    }
     
     private TransformData transformData;
     
@@ -29,14 +25,10 @@ public class RotationModel {
         observers= new LinkedList<TransformDataChangeObserver>();
     }
     
-    
     public static RotationModel getInstance(){
         return instance;
     }
 
-    /**
-     * @return the transformData
-     */
     public TransformData getTransformData() {
         return transformData;
     }
@@ -49,18 +41,11 @@ public class RotationModel {
         this.setTransformData(null, x, y, z);
     }
     public void setTransformData(Object source, float x, float y, float z){
-        System.out.println("Rotation changed to "+x+" "+y+" "+z);
+   
         Quaternion q= new Quaternion(new float[] { (float)x, (float)y, (float)z} );
         this.setQuaternion(source, q);        
-        
-//        this.transformData.calculateQuaternion();
-//        notifyTransformDataChanged(source);
     }
-    /**
-     * @param transformData the transformData to set
-     */
-    
-    
+   
     public void setTransformData(Object source, TransformData transformData) {
         this.transformData = transformData;
         notifyTransformDataChanged(source);
@@ -71,14 +56,13 @@ public class RotationModel {
     }
     
     public void notifyTransformDataChanged(Object source){
+        Matrix4f m4= new Matrix4f();
+        
+        // before notifying the data changed, send the data
+        DataManager.getInstance().send(transformData.getQuaternion().toRotationMatrix(m4));
         for(TransformDataChangeObserver obs : observers){
             obs.onTransformDataChanged(source, transformData);
         }
-        
-    }
-    
-    public void multBy(Object source, float x, float y, float z){
-        Quaternion q= new Quaternion(new float[] { x, y, z});
     }
 
     public void rotateLocal(Object source, float x, float y, float z){
@@ -97,15 +81,10 @@ public class RotationModel {
         notifyTransformDataChanged(source);
     }
     
-    public void rotateBy(Quaternion q){
-        this.rotateBy(null ,q);
+    public void resetToDefaultOrientation(){
+        Quaternion rotation= new Quaternion(new float[] { 0, 0, 0 } );
+        getTransformData().setQuaternion(rotation);
+        getTransformData().setLastRotation(null);
+        notifyTransformDataChanged(null);
     }
-    public void rotateBy(Object source, Quaternion q) {
-        
-        this.transformData.setQuaternion(this.transformData.getQuaternion().mult(
-                q));
-        this.transformData.setLastRotation(q);
-        notifyTransformDataChanged(source);
-    }
-    
 }

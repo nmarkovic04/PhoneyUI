@@ -4,10 +4,9 @@
  */
 package com.phoney.model.preset;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.phoney.model.AnimateFunction;
-import com.phoney.model.AnimateFunction.AnimateFunctionType;
-import com.phoney.model.AnimationManager;
+import com.phoney.animation.AnimateFunction;
+import com.phoney.animation.AnimateFunction.AnimateFunctionType;
+import com.phoney.animation.AnimationManager;
 import com.phoney.model.TransformData;
 /**
  *

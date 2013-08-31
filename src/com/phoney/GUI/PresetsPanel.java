@@ -15,7 +15,7 @@ import javax.swing.event.TableModelListener;
 import com.phoney.model.preset.ModelChangeObserver;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
-import com.phoney.model.AnimationManager;
+import com.phoney.animation.AnimationManager;
 
 import com.phoney.model.preset.PresetModel;
 import com.phoney.model.RotationModel;

@@ -1,13 +1,8 @@
 package com.phoney.model;
 
-
 import com.jme3.material.Material;
 import com.jme3.scene.Geometry;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 /**
  *
@@ -76,7 +71,6 @@ public class Axis {
      */
     public void setHomie(Axis homie) {
         this.homie = homie;
-        
     }
 
     /**

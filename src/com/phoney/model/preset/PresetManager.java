@@ -1,20 +1,12 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.phoney.model.preset;
 
 import com.jme3.math.Quaternion;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 import com.phoney.model.RotationModel;
 import com.phoney.model.TransformData;
 import com.phoney.util.Settings;
-
-
-
-
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  *
@@ -102,7 +94,6 @@ public class PresetManager {
     }
 
     private class AnimationTask extends TimerTask {
-
         private Preset sourcePreset;
         private Preset destinationPreset;
         
@@ -116,12 +107,11 @@ public class PresetManager {
         
         @Override
         public void run() {
-            if(startTime<0){
+            if(startTime<0){ 
                 startTime= new Date().getTime();
             }
             
             long diff= new Date().getTime()-startTime;
-            
             float duration= destinationPreset.getDuration();
             
             if(diff>duration){
@@ -142,7 +132,5 @@ public class PresetManager {
             
             RotationModel.getInstance().setTransformData(this, new TransformData(q1));
         }
-
-        
     }
 }

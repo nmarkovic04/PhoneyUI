@@ -17,6 +17,6 @@ public class Settings {
     public static boolean sceneChanged= false;
     public static File currentFile= null;
     
-    public static int WIDTH= 600;
-    public static int HEIGHT= 400;
+    public static int WIDTH= 1024;
+    public static int HEIGHT= 768;
 }

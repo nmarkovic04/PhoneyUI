@@ -1,8 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package com.phoney.game.scene;
+package com.phoney.scene;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.collision.CollisionResult;
@@ -16,51 +12,75 @@ import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.filters.BloomFilter;
-import com.jme3.renderer.Camera;
 import com.jme3.renderer.queue.RenderQueue;
-import com.jme3.scene.CameraNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
-import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Torus;
 import com.jme3.system.JmeCanvasContext;
+import com.phoney.model.Axis;
+import com.phoney.model.RotationModel;
+import com.phoney.model.TransformData;
+import com.phoney.util.Settings;
 import java.awt.Canvas;
 import java.awt.Dimension;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import com.phoney.model.Axis;
-import com.phoney.model.RotationModel;
-import com.phoney.model.TransformData;
-import com.phoney.game.DataManager;
 
 /**
  *
  * @author nikolamarkovic
  */
-public class FixedCameraScene extends Scene {
+public class FixedCameraScene extends CameraView {
 
+    /* *** CONSTANTS *** */
     private final String NODE_AXES = "NODE_AXES";
+    
+    private final int AXIS_INNER_X = 1;
+    private final int AXIS_INNER_Y = 2;
+    private final int AXIS_INNER_Z = 3;
+    private final int AXIS_OUTTER_X = -1;
+    private final int AXIS_OUTTER_Y = -2;
+    private final int AXIS_OUTTER_Z = -3;
+    
+    private final double cRotateSpeed = 1.0;
+    private boolean filtersInitialized = false;
+    /* *** GEOMETRY *** */
+
     private Node axesNode;
-//    private Geometry phoneGeometry;
-    // outter ring geom
+    private Spatial phoneSpatial;
+    
+    // Outter ring geometry is a transparent wrapper around the visible geometry
+    // making the hitbox bigger and easier to click on
+    
+    // outter ring geometry
     private Geometry xAxisGeom;
     private Geometry yAxisGeom;
     private Geometry zAxisGeom;
-    // inner geom
+    
+    // inner ring geometry
     private Geometry ixAxisGeom;
     private Geometry iyAxisGeom;
     private Geometry izAxisGeom;
     private List<Axis> axes;
+    
+    /* *** UI/JME *** */
+    private final ColorRGBA cGlowColor= ColorRGBA.Green;
+    
     private JmeCanvasContext context;
     private SimpleApplication app;
 
+    /* *** SCENE *** */
+    private Vector2f lastMouseDragPosition = null;
+    private Material glowing;
+    
     public FixedCameraScene(SimpleApplication app, JmeCanvasContext pContext) {
         this.context = pContext;
         this.app = app;
-        Dimension dim = new Dimension(1024, 768);
+        Dimension dim = new Dimension(Settings.WIDTH, Settings.HEIGHT);
 
+        // no rotate axis at the beginning
         rotateAxis = RotateAxis.UNDEFINED;
         active = true;
         context.getCanvas().setPreferredSize(dim);
@@ -69,21 +89,17 @@ public class FixedCameraScene extends Scene {
     public Canvas getCanvas() {
         return context.getCanvas();
     }
-    private final int AXIS_INNER_X = 1;
-    private final int AXIS_INNER_Y = 2;
-    private final int AXIS_INNER_Z = 3;
-    private final int AXIS_OUTTER_X = -1;
-    private final int AXIS_OUTTER_Y = -2;
-    private final int AXIS_OUTTER_Z = -3;
-
+    
     private void createAxes() {
+        // create axes geometry rings
+        
         int circleSamples = 300;
         int radialSamples = 20;
         float innerRadius = 0.02f;
-        float outterRadius = 2.7f;
+        float outterRadius = 2.8f;
 
         float innerRadiusTr = 0.1f;
-        float outterRadiusTr = 2.7f;
+        float outterRadiusTr = 2.8f;
 
         // inner X
         Torus t1 = new Torus(circleSamples, radialSamples, innerRadius, outterRadius);
@@ -93,7 +109,6 @@ public class FixedCameraScene extends Scene {
         ixAxisGeom.setMaterial(xAxisMat);
         ixAxisGeom.rotate(0f, (float) Math.toRadians(90.0), 0f);
         addAxis(ixAxisGeom, xAxisMat, AXIS_INNER_X);
-
 
         // outer X
         Torus t1TR = new Torus(circleSamples, radialSamples, innerRadiusTr, outterRadiusTr);
@@ -107,7 +122,6 @@ public class FixedCameraScene extends Scene {
         xAxisGeom.setMaterial(xAxisMatTr);
         xAxisGeom.rotate(0f, (float) Math.toRadians(90.0), 0f);
         addAxis(xAxisGeom, xAxisMatTr, AXIS_OUTTER_X);
-
 
         // inner Y
         Torus t2 = new Torus(circleSamples, radialSamples, innerRadius, outterRadius);
@@ -157,7 +171,6 @@ public class FixedCameraScene extends Scene {
         zAxisGeom.rotate((float) Math.toRadians(90.0), 0f, 0f);
         addAxis(zAxisGeom, zAxisMatTr, AXIS_OUTTER_Z);
 
-
     }
 
     private void addAxis(Geometry geom, Material mat, int ID) {
@@ -191,15 +204,7 @@ public class FixedCameraScene extends Scene {
         return null;
     }
 
-    private Axis getAxisByID(int pID) {
-
-        for (Axis lAxis : getAxes()) {
-            if (lAxis.getID() == pID) {
-                return lAxis;
-            }
-        }
-        return null;
-    }
+ 
 
     public List<Axis> getAxes() {
         if (axes == null) {
@@ -207,63 +212,42 @@ public class FixedCameraScene extends Scene {
         }
         return axes;
     }
-    private Vector2f startMouseDragPosition = null;
-    private Vector2f lastMouseDragPosition = null;
 
     private CollisionResult handleCollision() {
 
         CollisionResults results = new CollisionResults();
-        // 2. Aim the ray from cam loc to cam direction.
+        
+        // get screen cursor position
         Vector2f click2d = new Vector2f(app.getInputManager().getCursorPosition());
         Vector3f click3d = app.getCamera().getWorldCoordinates(
                 new Vector2f(click2d.x, click2d.y), 0f).clone();
+        
+        // get ray from the cursor position
         Vector3f dir = app.getCamera().getWorldCoordinates(
                 new Vector2f(click2d.x, click2d.y), 1f).subtractLocal(click3d).normalizeLocal();
         Ray ray = new Ray(click3d, dir);
 
-        // 3. Collect intersections between Ray and Shootables in results list.
+        // collect intersections between ray and axes(which are attached to the axesNode)
         axesNode.collideWith(ray, results);
-        // 4. Print the results
-//        System.out.println("----- Collisions? " + results.size() + "-----");
-        for (int i = 0; i < results.size(); i++) {
-            // For each hit, we know distance, impact point, name of geometry.
-            float dist = results.getCollision(i).getDistance();
-            Vector3f pt = results.getCollision(i).getContactPoint();
-            String hit = results.getCollision(i).getGeometry().getName();
-
-        }
-        // 5. Use the results (we mark the hit object)
+        
         if (results.size() > 0) {
-            // The closest collision point is what was truly hit:
-            startMouseDragPosition = click2d;
             lastMouseDragPosition = new Vector2f(click2d);
 
+            // return the closest collision
             CollisionResult closest = results.getClosestCollision();
             return closest;
-            // Let's interact - we mark the hit with a red dot.
-//          closest.getGeometry().getMaterial().setColor("Color", ColorRGBA.randomColor());
         } else {
-            // No hits? Then remove the red mark.
-            startMouseDragPosition = null;
+            // nothing was hit
             lastMouseDragPosition = null;
-
         }
         return null;
     }
 
+    @Override
     protected void initNodes() {
         axesNode = new Node(NODE_AXES);
         app.getRootNode().attachChild(axesNode);
     }
-    private double rotateFactorAngle = 0.2;
-
-    protected void initGUI() {
-    }
-    
-    private double rotateFactor = 1.0;
-
-    private double lastXPosition= -1.0f;
-    private double lastYPoistion= -1.0f;
     
     @Override
     public void onMouseDrag() {
@@ -275,47 +259,49 @@ public class FixedCameraScene extends Scene {
         double dX = lastX - pos.x;
         double dY = lastY - pos.y;
 
-        
         double dist = dX + dY;
-        System.out.println(dX+" , "+dY+ " , "+dist);
-        double rotation = dist * rotateFactor;
-        System.out.println("Rotation " + rotation);
-
-//        FixedCameraScene.this.rotateBy(,
-//                false);
         
-//        RotationModel.getInstance().
+        // we calculate rotation by multiplying 2d distance(cursor distance from the original mouse position) 
+        // with the rotation speed
+        double rotation = dist * cRotateSpeed;
+
+        // apply the world rotation
         RotationModel.getInstance().rotateWorld(this, axis(FixedCameraScene.RotateAxis.X_AXIS) * -(float) Math.toRadians(rotation),
                 axis(FixedCameraScene.RotateAxis.Z_AXIS) * (float) Math.toRadians(rotation),
                 axis(FixedCameraScene.RotateAxis.Y_AXIS) * -(float) Math.toRadians(rotation));
-//        RotationModel.getInstance().getTransformData().setQuaterion(phoneSpatial.getLocalRotation());
+        
+        
         lastMouseDragPosition = new Vector2f(pos);
-
-//        DataManager.getInstance().send(phoneSpatial.getLocalToWorldMatrix(null));
     }
-    private Material glowing;
 
     @Override
     public void onMouseMove() {
+        // remove any previous glowing material from the axes
         if (glowing != null) {
             glowing.setColor("GlowColor", ColorRGBA.BlackNoAlpha);
             glowing = null;
         }
-        CollisionResult result = handleCollision();
+        
+        // get the collision result
+        CollisionResult result = handleCollision(); 
         if (result == null) {
-
             return;
         }
+        
+        // result isn't null, meaning mouse is over an axis
+        
+        // get geometry
         Geometry geom = result.getGeometry();
         Axis axis = getAxisFromGeometry(geom);
 
+        // if the axis is outter(transparent), get his homie ( yo and stuff, brah )
         if (axis.isOutter()) {
             axis = axis.getHomie();
         }
-
+        
+        // highlight the axis
         Material mat = axis.getMaterial();
-
-        mat.setColor("GlowColor", ColorRGBA.Green);
+        mat.setColor("GlowColor", cGlowColor);
         glowing = mat;
     }
 
@@ -326,12 +312,12 @@ public class FixedCameraScene extends Scene {
             if (result == null) {
                 dragging = false;
                 initialDragPosition = null;
-                initialDragRotation = null;
+                
                 return;
             } else {
                 dragging = true;
                 initialDragPosition = new Vector2f(app.getInputManager().getCursorPosition());
-                initialDragRotation = new Quaternion(phoneSpatial.getLocalRotation());
+                
 
             }
 
@@ -342,6 +328,8 @@ public class FixedCameraScene extends Scene {
             } else if (result.getGeometry() == zAxisGeom) {
                 rotateAxis = FixedCameraScene.RotateAxis.Z_AXIS;
             } else {
+                // should never enter here unless someone discovers a fourth axis in 3D space. Now, I hear
+                // you saying what about time? CAN YOU CLICK ON TIME DUMMY? DOES IT HAVE A GEOMETRY? GEEZ...
                 rotateAxis = FixedCameraScene.RotateAxis.UNDEFINED;
             }
         } else {
@@ -350,13 +338,7 @@ public class FixedCameraScene extends Scene {
         }
     }
     private Vector2f initialDragPosition;
-    private Quaternion initialDragRotation;
-    private float xRotation = 0;
-    private float yRotation = 0;
-    private float zRotation = 0;
-
-    protected void initInput() {
-    }
+  
 
     public void setRotation(Quaternion q) {
         Quaternion rotation= q.mult(phoneSpatial.getLocalRotation());
@@ -367,31 +349,21 @@ public class FixedCameraScene extends Scene {
     private RotateAxis rotateAxis;
 
     public void onTransformDataChanged(final Object source, final TransformData data) {
+        // enqueue to handle rotation in the right thread
         app.enqueue(new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 phoneSpatial.setLocalRotation(data.getQuaternion());
-//                if(source==FixedCameraScene.this){
-//                    if(data.getLastRotation()!=null){
-//                        setRotation(data.getLastRotation());
-//                    }else{
-//                        phoneSpatial.setLocalRotation(data.getQuaternion());    
-//                    }
-//                }else{
-//                    phoneSpatial.rotate(data.getLastRotation());
-//                }
                 return true;
             }
         });
     }
-    private boolean filtersInitialized = false;
+    
 
     @Override
     protected void initCamera() {
         this.camera = app.getCamera();
         app.getFlyByCamera().setEnabled(false);
-        app.getViewPort().setBackgroundColor(new ColorRGBA(0.7f, 0.8f, 1f, 1f));
         app.getInputManager().setCursorVisible(true);
-
 
         app.getViewPort().setClearFlags(true, true, true);
 
@@ -410,34 +382,20 @@ public class FixedCameraScene extends Scene {
 
     @Override
     protected void initGeometry() {
-
         createPhoneGeometry();
         createAxes();
-
     }
-    private Spatial phoneSpatial;
 
     private void createPhoneGeometry() {
-        Box b = new Box(0.2f, 1.0f, 0.5f);
         phoneSpatial = app.getAssetManager().loadModel("Models/iphone_4s_home_screen.j3o");
-
         phoneSpatial.setLocalTranslation(xGeom, yGeom, zGeom);
         phoneSpatial.setLocalRotation(new Quaternion(new float[]{0, 0, 0}));
         app.getRootNode().attachChild(phoneSpatial);
-        
-        
-        
     }
 
     @Override
-    public void show() {
-        active = true;
+    protected void showCameraView() {
         initCamera();
-    }
-
-    enum RotateAxis {
-
-        X_AXIS, Y_AXIS, Z_AXIS, UNDEFINED
     }
 
     private int axis(RotateAxis axis) {
@@ -447,25 +405,28 @@ public class FixedCameraScene extends Scene {
         return 0;
     }
 
-    @Override
-    public void willDisappear() {
-        active = false;
-        axesNode.detachAllChildren();
-        app.getRootNode().detachChild(phoneSpatial);
-    }
 
     @Override
-    public void willAppear() {
+    protected void cameraViewWillAppear() {
         app.getRootNode().attachChild(phoneSpatial);
     }
 
     @Override
-    public void didAppear() {
+    protected void cameraViewDidAppear() {
         active = true;
         for (Axis lAxis : getAxes()) {
             axesNode.attachChild(lAxis.getGeometry());
         }
     }
 
+    @Override
+    protected void cameraViewWillDisappear() {
+        axesNode.detachAllChildren();
+        app.getRootNode().detachChild(phoneSpatial);
+    }
 
+
+    enum RotateAxis {
+        X_AXIS, Y_AXIS, Z_AXIS, UNDEFINED
+    }   
 }
